@@ -16,8 +16,15 @@ namespace RocketScienceHomework
         public const double goalH = 3.5E7;  
         public const double initialH = earthR;
         public const double burnRate = 240; // kg/s
+
+
         public double payloadWeight;        //kg
         public double fuelWeight;           //kg
+        public double initialFuelWeight;
+        public double initialTheta;
+
+
+        public bool angled;
         public double dT;
         public double simT;
         public double nBoxes;
@@ -27,7 +34,8 @@ namespace RocketScienceHomework
         public double theta;
         public double totalDist;
         public bool leftGround;
-        public Vector[] points = { new Vector(0, 0, 0), new Vector(0, 100000, 26000), new Vector(0, 200000, 30000), new Vector(0, 300000, 27000), new Vector(0, 400000, 18000), new Vector(0, 500000, 6000), new Vector(0, 544883, 0) };
+        public Vector[] expectedPoints = { new Vector(0, 0, 0), new Vector(0, 100000, 26000), new Vector(0, 200000, 30000), new Vector(0, 300000, 27000), new Vector(0, 400000, 18000), new Vector(0, 500000, 6000), new Vector(0, 544883, 0) };
+        public Vector[] observedPoints = new Vector[7];
 
         //forces
         public Vector fGrav;
@@ -36,15 +44,22 @@ namespace RocketScienceHomework
         public Vector aRocket, vRocket, pRocket;
 
 
-        public Rocket(double fuelWeight, double theta, double nBoxes, double simT, double dT)
+        public Rocket(double fuelWeight, double theta, double nBoxes, double simT, double dT, bool angled)
         {
             payloadWeight = 123048;
+
             this.fuelWeight = fuelWeight;
+            this.initialFuelWeight = fuelWeight;
             this.theta = theta;
+            this.initialTheta = theta;
+            this.angled = angled;
+
             totalDist = 0;
+
             this.simT = simT;
             this.dT = dT;
             this.nBoxes = nBoxes;
+
             leftGround = false;
             fGrav = new Vector(0, 0, 0);
             fThrust = new Vector(0, 0, 0);
@@ -54,20 +69,22 @@ namespace RocketScienceHomework
             pRocket = new Vector(0, 0, earthR);
         }
 
-        public bool StartRocket()
+        public double[] StartRocket()
         {
             for (double t = 0; t < simT; t += dT)
             {
                 updateRocketPosition();
                 CheckRocketPosition();
                 updateFuel();
-                bool threshold = checkThreshold(true);//checkThreshold, if true, stop looping.
+                bool threshold = checkThreshold(angled); //checkThreshold, if true, stop looping.
                 if (threshold)
                 {
-                    return true;
+                    double[] output1 = { t, initialFuelWeight, initialTheta, totalDist, calcChiSquared() };
+                    return output1;
                 }
             }
-            return true;
+            double[] output2 = { simT, initialFuelWeight, initialTheta, totalDist, calcChiSquared() };
+            return output2;
         }
 
 
@@ -75,6 +92,8 @@ namespace RocketScienceHomework
         {
             double zGrav = (earthM * (fuelWeight + payloadWeight) * G) / (pRocket.Z * pRocket.Z);
             fGrav = new Vector(0, 0, zGrav);
+            //fGrav = new Vector(0, 0, 9.8);
+            //fGrav = fGrav * (payloadWeight + fuelWeight);
         }
 
         public void calculateThrust()
@@ -82,8 +101,9 @@ namespace RocketScienceHomework
             const double thrustConst = 1.2E7;
             if (fuelWeight > 0)
             {
-                //fThrust = new Vector(0, 0, 1.2E7);
-                fThrust = new Vector(0, Math.Cos(theta * (Math.PI / 180.0)) * thrustConst, Math.Sin(theta * (Math.PI / 180.0) * thrustConst));
+                fThrust = new Vector(0, 0, 1.2E7);  
+                theta = 90;
+                fThrust = new Vector(0, Math.Cos(theta * (Math.PI / 180.0)) * thrustConst, Math.Sin(theta * (Math.PI / 180.0)) * thrustConst);
             }
             else
             {
@@ -96,8 +116,7 @@ namespace RocketScienceHomework
             calculateThrust();
             calcForceGrav();
             fNet = fThrust - fGrav;
-            //Console.WriteLine(fuelWeight + "    " + fNet + "    " + fThrust + "   " + fGrav);
-            //Console.WriteLine(pRocket.Z);
+            //Console.WriteLine(fuelWeight + "    " + pRocket + "    " + fNet + "   " + fGrav + "    " + fThrust);
             aRocket = fNet / (fuelWeight + payloadWeight);
             vRocket = vRocket + (aRocket * dT);
             pRocket = pRocket + (vRocket * dT);
@@ -155,10 +174,33 @@ namespace RocketScienceHomework
         //record when a rocket passes a certain point (when it crosses dong x, calc y) //calc ki squarted at all 7 points then add together to get the total (FIXX)
         public void CheckRocketPosition()
         {
+            int z = 0;
+            foreach(var i in expectedPoints)
+            {
+                double offset = 100;
+                if (i.Y - offset < pRocket.Y && i.Y + offset > pRocket.Y)
+                {
+                    observedPoints[z] = (new Vector(0, pRocket.Y, pRocket.Z));
+                }
+                z += 1;
+            }
+            /*
             for (int i = 0; i < points.Length; i++)
             {
                 totalDist += Math.Abs(Math.Abs(pRocket.Y - points[i].Y) + Math.Abs(pRocket.Z - points[i].Z));
             }
+            */
+        }
+
+        public double calcChiSquared()
+        {
+            double totalSum = 0.0;
+            double uncertanty = 1.0;
+            for(int i = 0; i < observedPoints.Length; i++)
+            {
+                totalSum += Math.Pow((expectedPoints[i].Z - observedPoints[i].Z) / uncertanty, 2);
+            }
+            return totalSum;
         }
     }
 }

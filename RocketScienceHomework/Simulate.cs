@@ -3,13 +3,7 @@ namespace RocketScienceHomework
 {
     internal class Simulate
     {
-        public const double G = 6.67408E-11;
-        public const double G2 = 6.67408E11;
-        public const double earthR = 6378.1 * 1000; //km -> m
-        public const double earthM = 5.97219E24; //kg
-        public const double goalH = 3.5E7;  
-        public const double initialH = earthR;
-        public const double burnRate = 240; // kg/s
+
         public double payloadWeight;        //kg
         public double fuelWeight;           //kg
         public double dT;
@@ -29,236 +23,90 @@ namespace RocketScienceHomework
         public Vector fNet;
         public Vector aRocket, vRocket, pRocket;
 
-        public Simulate()
-        {
-            dT = 1;
-            simT = 20000;
-            resetRocket();
-        }
-        
-        public void calcForceGrav()
-        {
-            double zGrav = (earthM * (fuelWeight + payloadWeight) * G) / (pRocket.Z * pRocket.Z);
-            fGrav = new Vector(0, 0, zGrav);
-        }
-
-        public void calculateThrust()
-        {
-            const double thrustConst = 1.2E7;
-            if (fuelWeight > 0)
-            {
-                //fThrust = new Vector(0, 0, 1.2E7);
-                fThrust = new Vector(0, Math.Cos(theta * (Math.PI / 180.0)) * thrustConst, Math.Sin(theta * (Math.PI / 180.0) * thrustConst));
-            }
-            else
-            {
-                fThrust = new Vector(0, 0, 0);
-            }
-        }
-
-        public void updateRocketPosition()
-        { 
-            calculateThrust();
-            calcForceGrav();
-            fNet = fThrust - fGrav;
-            //Console.WriteLine(fuelWeight + "    " + fNet + "    " + fThrust + "   " + fGrav);
-            //Console.WriteLine(pRocket.Z);
-            aRocket = fNet / (fuelWeight + payloadWeight);
-            vRocket = vRocket + (aRocket * dT);
-            pRocket = pRocket + (vRocket * dT);
-        }
-
-        public bool checkThreshold(bool angled)
-        {
-            if(!angled)
-            {
-                //can't go below the Earth's surface
-                if (pRocket.Z < earthR)
-                {
-                    pRocket.Z = earthR;
-                }
-                else if (pRocket.Z > goalH)
-                {
-                    return true; //exit for loop, found the correct value
-                }
-                else
-                {
-                    leftGround = true;
-                }
-            }
-            else if (angled)
-            {
-                if (pRocket.Z <= earthR + 10 && leftGround) //if it hits the surface and the thrust is high enough      
-                {
-                    return true;
-                }
-                //can't go below the Earth's surface
-                else if (pRocket.Z < earthR)
-                {
-                    pRocket.Z = earthR;
-                }
-                else
-                {
-                    leftGround = true;
-                }
-            }
-            return false;   
-        }
-
-        public void updateFuel()
-        {
-            fuelWeight -= burnRate * dT;
-            if (fuelWeight < 0)
-            {
-                fuelWeight = 0;
-            }
-        }
-        public void BruteForce()
-        {
-            double bestFuel = 0;
-            double bestTime = 40000; //500000
-            theta = Math.PI / 2;
-
-            for (double i = 300000; i < 300001; i++)
-            {
-                fuelWeight = i;
-                for (double t = 0; t < simT; t += dT)
-                {
-                    updateRocketPosition();
-                    updateFuel();
-                    bool endSimulation = checkThreshold(false); //checkThreshold, if true, stop looping.
-                    if (endSimulation)
-                    {
-                        if (t < bestTime)
-                        {
-                            bestFuel = i;
-                            bestTime = t;
-                        }
-                        t = simT;
-                    }
-                }
-                resetRocket();
-            }
-            Console.WriteLine(bestFuel + "  " + bestTime);
-        }
-
         public void Start()
         {
             //LEVEL ONE
             //BruteForce();
             //LEVEL TWO
-            //AngledMotionBruteForce();
-            AngledMotionOptimization();
+            AngledMotionBruteForce();
+            //AngledMotionOptimization();
         }
-
-
-
-        /// <summary>
-        /// ALL ABOVE THIS LINE IS SOLID
-        /// </summary>
-
-        public void resetRocket()
+        
+        public void BruteForce()
         {
-            payloadWeight = 123048;
-            fuelWeight = 0;
-            theta = 0;
-            totalDist = 0;
-            nBoxes = 0;
-            leftGround = false;
-            fGrav = new Vector(0, 0, 0);
-            fThrust = new Vector(0, 0, 0);
-            fNet = new Vector(0, 0, 0);
-            aRocket = new Vector(0, 0, 0);
-            vRocket = new Vector(0, 0, 0);
-            pRocket = new Vector(0, 0, earthR);
-        }
+            double bestFuel = 0;
+            double bestTime = 0;
 
-        //record when a rocket passes a certain point (when it crosses dong x, calc y) //calc ki squarted at all 7 points then add together to get the total (FIXX)
-        public void CheckRocketPosition()
-        {
-            for(int i = 0; i<points.Length; i++)
+            for (double i = 0; i < 300000; i++)
             {
-                totalDist += Math.Abs(Math.Abs(pRocket.Y - points[i].Y) + Math.Abs(pRocket.Z - points[i].Z));
-            }
-        }
-
-        public bool CalculateOneRocketCycle()
-        {
-
-            for (double t = 0; t < simT; t += dT)
-            {
-                updateRocketPosition();
-                CheckRocketPosition();
-                updateFuel();
-                bool threshold = checkThreshold(true);//checkThreshold, if true, stop looping.
-                if (threshold)
+                fuelWeight = i;
+                var rocket = new Rocket(fuelWeight, 90, 3, 3000, 10, false);
+                double[] output = rocket.StartRocket(); //t, fuelWeight, theta, totalDist
+                if (bestTime == 0)
                 {
-                    return true;
+                    bestTime = output[0];
+                    bestFuel = output[1];
+                }
+                else if (output[0] < bestTime)
+                {
+                    bestFuel = output[1];
+                    bestTime = output[0];
                 }
             }
-            return true;
+            Console.WriteLine(bestFuel + "  " + bestTime);
         }
+
 
         public double[] RecursiveOptimization(double boxX, double boxY, double angleUpper, double angleLower, double fuelUpper, double fuelLower, double totalDist, double nBox)
         {
-            double bestBoxX = boxX;
-            double bestBoxY = boxY;
-            double bestAngleUpper = angleUpper;
-            double bestFuelUpper = fuelUpper;
-            double bestAngleLower = angleLower; ;
-            double bestFuelLower = fuelLower;
-            double bestDist = totalDist;
-            Console.WriteLine(boxX + "  " + boxY);
+            double bestBoxX = 0;
+            double bestBoxY = 0;
+
+            double bestAngleUpper = 0;
+            double bestFuelUpper = 0;
+            double bestAngleLower = 0;
+            double bestFuelLower = 0;
+
+            Console.WriteLine(boxX + "  " + boxY + ": New Recursion" + "lower -> higher angle" + angleLower + "\t" + angleUpper + "    lower -> higher weight" + fuelLower + "\t" + fuelUpper);
+            //reset best dist and angles
+            double bestDist = 0;
+
+            //angleUpper = boxX 
 
             //rows
             for (int i = 0; i < nBox; i++)
             {
-                double boxNewX = (int) fuelLower + ((angleUpper) / (2 * nBoxes)) + (i * (angleUpper) / nBoxes);
+                Console.WriteLine(angleLower + "    " + angleUpper);
+                double boxNewX = (int)angleLower + ((angleUpper) / (2 * nBoxes)) + (i * (angleUpper) / nBoxes);
                 //columns
                 for (int z = 0; z < nBox; z++)
                 {
-                    double boxNewY = (int) angleLower + ((fuelUpper) / (2 * nBoxes)) + (z * (fuelUpper) / nBoxes);
+                    double boxNewY = (int)fuelLower + ((fuelUpper) / (2 * nBoxes)) + (z * (fuelLower) / nBoxes);
+                    //Console.WriteLine("     " + boxNewX + "  " + boxNewY);
+                    var rocket = new Rocket(boxNewY, boxNewX, 3, 3000, 10, true);
+                    double[] output = rocket.StartRocket(); //t, fuelWeight, theta, totalDist
+                    //Console.WriteLine(output[2]);
 
-                    Console.WriteLine("     " + boxNewX + "  " + boxNewY);
-
-                    //repopulate rocket values
-                    /*
-                    resetRocket();
-                    fuelWeight = boxNewY;
-                    theta = boxNewX;
-                    nBoxes = nBox;
-                    bool endSimulation = CalculateOneRocketCycle();
-                    */
-
-
-                    var Rocket = new Rocket(fuelWeight, theta, nBoxes, simT, dT);
-                    bool endSimulation = Rocket.StartRocket();
-
-                    if (endSimulation)
+                    if (bestDist == 0)
                     {
-                        if (bestDist == 0)
-                        {
-                            bestDist = totalDist;
-                            bestBoxX = boxNewX;
-                            bestBoxY = boxNewY;
-                            bestAngleUpper = bestBoxX + ((angleUpper) / (2 * nBoxes));
-                            bestAngleLower = bestBoxX - ((angleUpper) / (2 * nBoxes));
-                            //Console.WriteLine(bestAngleUpper);
-                            bestFuelUpper = bestBoxY + ((fuelUpper) / (2 * nBoxes));
-                            bestFuelLower = bestBoxY - ((fuelUpper) / (2 * nBoxes));
-                        }
-                        else if (totalDist < bestDist)
-                        {
-                            bestDist = totalDist;
-                            bestBoxX = boxNewY;
-                            bestBoxY = boxNewX;
-                            //Console.WriteLine(bestAngleUpper);
-                        }
+                        bestDist = output[3];
+                        bestBoxX = output[2];
+                        bestBoxY = output[1];
+                        bestAngleUpper = bestBoxX + ((angleUpper) / (2 * nBoxes));
+                        bestAngleLower = bestBoxX - ((angleUpper) / (2 * nBoxes));
+
+                        bestFuelUpper = bestBoxY + ((fuelUpper) / (2 * nBoxes));
+                        bestFuelLower = bestBoxY - ((fuelUpper) / (2 * nBoxes));
+                    }
+                    else if (totalDist > bestDist)
+                    {
+                        bestDist = output[3];
+                        bestBoxX = output[2];
+                        bestBoxY = output[1];
                     }
                 }
             }
-            //Console.WriteLine(angleUpper);
-            if(iter <= 0)
+            if (iter <= 0)
             {
                 double[] outputCoords = { bestBoxX, bestBoxY, bestAngleUpper, bestFuelUpper, bestDist };
                 return outputCoords;
@@ -276,75 +124,58 @@ namespace RocketScienceHomework
             double bestFuel = 0;
             double bestDist = 0;
             double bestAngle = 0;
-            double fuelLower = 0;
-            double fuelUpper = 205010;
+            double fuelLower = 199990;
+            double fuelUpper = 200000;
             double angleLower = 0;
             double angleUpper = 90;
+
 
             //optimization specific
             nBoxes = 3;
             iter = 10;
             double[] outputCoords = RecursiveOptimization(angleUpper, fuelUpper, angleUpper, angleLower, fuelUpper, fuelLower, bestDist, nBoxes);
-            bestDist = outputCoords[4];
-            bestFuel = outputCoords[3];
-            bestAngle = outputCoords[2];
+            bestDist = outputCoords[3];
+            bestFuel = outputCoords[1];
+            bestAngle = outputCoords[0];
 
-            Console.WriteLine(bestFuel + "  " + bestDist + "  " + bestAngle + "         fuel -> dist -> anlgle");
+            Console.WriteLine(bestFuel + "  " + bestAngle + "  " + bestDist + "         fuel -> angle -> dist2");
         }
-
-
-
-
-
-
-
-
-
 
 
 
         public void AngledMotionBruteForce()
         {
             double bestFuel = 0;
-            double bestDist = 0;
+            double chiSquared = 0;
             double bestAngle = 0;
-            theta = Math.PI / 4;
-            double fuelWeightLowerBound = 205009;
-            double fuelWeightUpperBound = 205010;
+            bool angled = true;
 
             double angleLowerBound = 30;
             double angleUpperBound = 60;
+            double fuelWeightLowerBound = 10000;
+            double fuelWeightUpperBound = 15000;
 
-            for(double angle = angleLowerBound; angle <= angleUpperBound; angle++)
+            for (double angle = angleLowerBound; angle <= angleUpperBound; angle++)
             {
                 for (fuelWeight = fuelWeightLowerBound; fuelWeight <= fuelWeightUpperBound; fuelWeight++)
                 {
-                    for (double t = 0; t < simT; t += dT)
+                    var rocket = new Rocket(fuelWeight, angle, 3, 3000, 10, true);
+                    double[] output = rocket.StartRocket(); //t, fuelWeight, theta, totalDist
+                    if (chiSquared == 0)
                     {
-                        updateRocketPosition();
-                        CheckRocketPosition();
-                        updateFuel();
-                        bool endSimulation = checkThreshold(true);//checkThreshold, if true, stop looping.
-                        if (endSimulation)
-                        {
-                            if (bestDist == 0)
-                            {
-                                bestDist = totalDist;
-                                bestFuel = fuelWeight;
-                                bestAngle = angle;
-                            }
-                            else if (totalDist < bestDist)
-                            {
-                                bestDist = totalDist;
-                                bestFuel = fuelWeight;
-                                bestAngle = angle;
-                            }
-                            t = simT;
-                        }
+                        chiSquared = output[4];
+                        bestFuel = output[1];
+                        bestAngle = output[2];
+                    }
+                    else if (output[0] < chiSquared)
+                    {
+                        chiSquared = output[0];
+                        bestFuel = output[1];
+                        bestAngle = output[2];
                     }
                 }
             }
-            Console.WriteLine(bestFuel + "  " + bestDist + "  " + bestAngle + "         fuel -> dist -> anlgle");
+            Console.WriteLine(bestFuel + "  " + chiSquared + "  " + bestAngle + "         fuel -> dist -> anlgle2");
         } 
     }
 }
