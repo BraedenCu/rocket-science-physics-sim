@@ -63,10 +63,10 @@ namespace RocketScienceHomework
             double bestAngle = 0;
             bool angled = true;
 
-            double angleLowerBound = 0;
-            double angleUpperBound = 20;
-            double fuelWeightLowerBound = 10000;
-            double fuelWeightUpperBound = 15000;
+            double angleLowerBound = 18;
+            double angleUpperBound = 40;
+            double fuelWeightLowerBound = 0;
+            double fuelWeightUpperBound = 10010;
 
             for (double angle = angleLowerBound; angle <= angleUpperBound; angle++)
             {
@@ -90,6 +90,25 @@ namespace RocketScienceHomework
             }
             Console.WriteLine(bestFuel + "  " + chiSquared + "  " + bestAngle + "         fuel -> chi squared -> anlgle2");
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         public double[] RecursiveOptimization(double boxX, double boxY, double angleUpper, double angleLower, double fuelUpper, double fuelLower, double totalDist, double nBox)

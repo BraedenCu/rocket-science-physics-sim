@@ -101,8 +101,8 @@ namespace RocketScienceHomework
             const double thrustConst = 1.2E7;
             if (fuelWeight > 0)
             {
-                fThrust = new Vector(0, 0, 1.2E7);  
-                theta = 90;
+                //fThrust = new Vector(0, 0, 1.2E7);  
+                //theta = 90;
                 fThrust = new Vector(0, Math.Cos(theta * (Math.PI / 180.0)) * thrustConst, Math.Sin(theta * (Math.PI / 180.0)) * thrustConst);
             }
             else
@@ -168,9 +168,6 @@ namespace RocketScienceHomework
             }
         }
 
-        /// <summary>
-        /// FIXXX
-        /// </summary>
         //record when a rocket passes a certain point (when it crosses dong x, calc y) //calc ki squarted at all 7 points then add together to get the total (FIXX)
         public void CheckRocketPosition()
         {
@@ -198,7 +195,6 @@ namespace RocketScienceHomework
             double uncertanty = 1.0;
             for(int i = 0; i < observedPoints.Length; i++)
             {
-                Console.WriteLine(i);
                 totalSum += Math.Pow((expectedPoints[i].Z - observedPoints[i].Z) / uncertanty, 2);
             }
             return totalSum;
