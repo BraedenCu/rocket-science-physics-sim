@@ -56,6 +56,41 @@ namespace RocketScienceHomework
             Console.WriteLine(bestFuel + "  " + bestTime);
         }
 
+        public void AngledMotionBruteForce()
+        {
+            double bestFuel = 0;
+            double chiSquared = 0;
+            double bestAngle = 0;
+            bool angled = true;
+
+            double angleLowerBound = 0;
+            double angleUpperBound = 20;
+            double fuelWeightLowerBound = 10000;
+            double fuelWeightUpperBound = 15000;
+
+            for (double angle = angleLowerBound; angle <= angleUpperBound; angle++)
+            {
+                for (fuelWeight = fuelWeightLowerBound; fuelWeight <= fuelWeightUpperBound; fuelWeight++)
+                {
+                    var rocket = new Rocket(fuelWeight, angle, 3, 3000, 10, true);
+                    double[] output = rocket.StartRocket(); //t, fuelWeight, theta, dist, chi squared
+                    if (chiSquared == 0)
+                    {
+                        chiSquared = output[4];
+                        bestFuel = output[1];
+                        bestAngle = output[2];
+                    }
+                    else if (output[4] < chiSquared)
+                    {
+                        chiSquared = output[4];
+                        bestFuel = output[1];
+                        bestAngle = output[2];
+                    }
+                }
+            }
+            Console.WriteLine(bestFuel + "  " + chiSquared + "  " + bestAngle + "         fuel -> chi squared -> anlgle2");
+        }
+
 
         public double[] RecursiveOptimization(double boxX, double boxY, double angleUpper, double angleLower, double fuelUpper, double fuelLower, double totalDist, double nBox)
         {
@@ -140,42 +175,5 @@ namespace RocketScienceHomework
 
             Console.WriteLine(bestFuel + "  " + bestAngle + "  " + bestDist + "         fuel -> angle -> dist2");
         }
-
-
-
-        public void AngledMotionBruteForce()
-        {
-            double bestFuel = 0;
-            double chiSquared = 0;
-            double bestAngle = 0;
-            bool angled = true;
-
-            double angleLowerBound = 30;
-            double angleUpperBound = 60;
-            double fuelWeightLowerBound = 10000;
-            double fuelWeightUpperBound = 15000;
-
-            for (double angle = angleLowerBound; angle <= angleUpperBound; angle++)
-            {
-                for (fuelWeight = fuelWeightLowerBound; fuelWeight <= fuelWeightUpperBound; fuelWeight++)
-                {
-                    var rocket = new Rocket(fuelWeight, angle, 3, 3000, 10, true);
-                    double[] output = rocket.StartRocket(); //t, fuelWeight, theta, totalDist
-                    if (chiSquared == 0)
-                    {
-                        chiSquared = output[4];
-                        bestFuel = output[1];
-                        bestAngle = output[2];
-                    }
-                    else if (output[0] < chiSquared)
-                    {
-                        chiSquared = output[0];
-                        bestFuel = output[1];
-                        bestAngle = output[2];
-                    }
-                }
-            }
-            Console.WriteLine(bestFuel + "  " + chiSquared + "  " + bestAngle + "         fuel -> dist -> anlgle2");
-        } 
     }
 }

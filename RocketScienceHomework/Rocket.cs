@@ -142,7 +142,7 @@ namespace RocketScienceHomework
             }
             else if (angled)
             {
-                if (pRocket.Z <= earthR + 10 && leftGround) //if it hits the surface and the thrust is high enough      
+                if (pRocket.Z <= earthR + 10 && leftGround && pRocket.Y > 1000) //if it hits the surface and the thrust is high enough      
                 {
                     return true;
                 }
@@ -198,6 +198,7 @@ namespace RocketScienceHomework
             double uncertanty = 1.0;
             for(int i = 0; i < observedPoints.Length; i++)
             {
+                Console.WriteLine(i);
                 totalSum += Math.Pow((expectedPoints[i].Z - observedPoints[i].Z) / uncertanty, 2);
             }
             return totalSum;
