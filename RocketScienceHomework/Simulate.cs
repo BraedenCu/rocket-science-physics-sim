@@ -72,7 +72,7 @@ namespace RocketScienceHomework
             {
                 for (fuelWeight = fuelWeightLowerBound; fuelWeight <= fuelWeightUpperBound; fuelWeight++)
                 {
-                    var rocket = new Rocket(fuelWeight, angle, 3, 3000, 10, true);
+                    var rocket = new Rocket(fuelWeight, angle, 3, 3000, 10, angled);
                     double[] output = rocket.StartRocket(); //t, fuelWeight, theta, dist, chi squared
                     if (chiSquared == 0)
                     {
